@@ -144,6 +144,30 @@ body {
   transform: translateY(-2px);
 }
 
+.btn-auto {
+  background: linear-gradient(135deg, #6f86d6 0%, #5e6b9f 100%);
+  color: white;
+  grid-column: 1 / -1;
+}
+
+.btn-auto:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5e6b9f 0%, #4a5380 100%);
+  transform: translateY(-2px);
+}
+
+.btn-auto:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-auto.playing {
+  background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);
+}
+
+.btn-auto.playing:hover {
+  background: linear-gradient(135deg, #c92a2a 0%, #a51e1e 100%);
+}
+
 /* 統計情報セクション */
 .stats-section {
   display: grid;
@@ -176,6 +200,66 @@ body {
 
 #reset-btn {
   grid-column: 1 / -1;
+}
+
+.speed-control {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+}
+
+.speed-control label {
+  font-weight: 600;
+  color: #333;
+  min-width: 80px;
+}
+
+#speed-slider {
+  flex: 1;
+  height: 6px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+  border-radius: 5px;
+  outline: none;
+}
+
+#speed-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  border: 2px solid #667eea;
+}
+
+#speed-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  border: 2px solid #667eea;
+}
+
+#speed-slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#speed-label {
+  min-width: 50px;
+  font-weight: 600;
+  color: #667eea;
 }
 
 /* ゲームボード */
@@ -215,6 +299,9 @@ body {
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
 }
 
 .base {
@@ -407,6 +494,86 @@ body {
   100% {
     filter: hue-rotate(360deg);
   }
+}
+
+/* 円盤接地エフェクト */
+@keyframes impactExpand {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* インパクトテキスト */
+@keyframes impactText {
+  0% {
+    transform: scale(0) rotate(-20deg);
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5) rotate(20deg);
+    opacity: 0;
+  }
+}
+
+/* 星型エフェクト */
+.impact-effect {
+  position: absolute;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.impact-star {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  animation: impactExpand 0.6s ease-out forwards;
+}
+
+.impact-star::before {
+  content: '★';
+  font-size: 60px;
+  color: #ffd43b;
+  filter: drop-shadow(0 0 8px rgba(255, 212, 59, 0.8));
+  display: block;
+  line-height: 60px;
+}
+
+/* インパクトテキスト */
+.impact-text {
+  position: absolute;
+  font-size: 48px;
+  font-weight: bold;
+  font-family: 'Comic Sans MS', 'Arial Black', sans-serif;
+  animation: impactText 0.7s ease-out forwards;
+  pointer-events: none;
+  z-index: 60;
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+.impact-text-bang {
+  color: #ff6b6b;
+  transform-origin: center;
+}
+
+.impact-text-pow {
+  color: #4dabf7;
+  transform-origin: center;
+}
+
+.impact-text-boom {
+  color: #ff922b;
+  transform-origin: center;
 }
 
 /* ルール説明セクション */

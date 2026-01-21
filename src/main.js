@@ -116,6 +116,8 @@ class HanoiTower {
 class GameUI {
   constructor() {
     this.game = null;
+    this.autoPlaying = false;
+    this.autoSpeed = 1;
     this.setupElements();
     this.attachEventListeners();
   }
@@ -124,6 +126,9 @@ class GameUI {
     this.difficultySelect = document.getElementById('difficulty');
     this.startBtn = document.getElementById('start-btn');
     this.resetBtn = document.getElementById('reset-btn');
+    this.autoBtn = document.getElementById('auto-btn');
+    this.speedSlider = document.getElementById('speed-slider');
+    this.speedLabel = document.getElementById('speed-label');
     this.moveCountDisplay = document.getElementById('move-count');
     this.minMovesDisplay = document.getElementById('min-moves');
     this.messageArea = document.getElementById('message');
@@ -137,6 +142,8 @@ class GameUI {
   attachEventListeners() {
     this.startBtn.addEventListener('click', () => this.startGame());
     this.resetBtn.addEventListener('click', () => this.resetGame());
+    this.autoBtn.addEventListener('click', () => this.toggleAutoPlay());
+    this.speedSlider.addEventListener('change', (e) => this.updateSpeed(e.target.value));
     this.difficultySelect.addEventListener('change', () => {
       if (this.game) {
         this.resetGame();
@@ -146,21 +153,113 @@ class GameUI {
 
   startGame() {
     const diskCount = parseInt(this.difficultySelect.value);
+    console.log('Starting game with disk count:', diskCount);
     this.game = new HanoiTower(diskCount);
+    console.log('Game initialized. Rods state:', this.game.rods);
     this.startBtn.textContent = '再スタート';
+    this.autoBtn.disabled = false;
+    this.speedSlider.disabled = false;
     this.updateDisplay();
+    console.log('Display updated');
     this.showMessage(`難易度: ${diskCount}個のディスク`, 'info');
   }
 
   resetGame() {
     if (this.game) {
+      this.autoPlaying = false;
+      this.autoBtn.textContent = '🤖 オートモード';
+      this.autoBtn.classList.remove('playing');
       this.game.initializeRods();
       this.updateDisplay();
       this.showMessage('ゲームをリセットしました', 'info');
     }
   }
 
+  toggleAutoPlay() {
+    if (!this.game) return;
+    
+    if (this.autoPlaying) {
+      this.autoPlaying = false;
+      this.autoBtn.textContent = '🤖 オートモード';
+      this.autoBtn.classList.remove('playing');
+    } else {
+      this.autoPlaying = true;
+      this.autoBtn.textContent = '⏸️ 停止';
+      this.autoBtn.classList.add('playing');
+      this.solveHanoi();
+    }
+  }
+
+  updateSpeed(value) {
+    this.autoSpeed = parseFloat(value);
+    const speedLabels = {
+      '0.5': '速い',
+      '1': '標準',
+      '1.5': 'やや遅い',
+      '2': '遅い',
+      '2.5': 'もっと遅い',
+      '3': '最も遅い'
+    };
+    this.speedLabel.textContent = speedLabels[value] || '標準';
+  }
+
+  solveHanoi() {
+    const moves = [];
+    this.generateHanoiMoves(this.game.diskCount, 0, 2, 1, moves);
+    this.executeMoves(moves);
+  }
+
+  generateHanoiMoves(n, source, destination, auxiliary, moves) {
+    if (n === 0) return;
+    if (!this.autoPlaying) return;
+
+    if (n === 1) {
+      moves.push({ from: source, to: destination });
+      return;
+    }
+
+    this.generateHanoiMoves(n - 1, source, auxiliary, destination, moves);
+    moves.push({ from: source, to: destination });
+    this.generateHanoiMoves(n - 1, auxiliary, destination, source, moves);
+  }
+
+  async executeMoves(moves) {
+    for (const move of moves) {
+      if (!this.autoPlaying) break;
+
+      // ディスクを選択
+      const success = this.game.selectDisk(move.from);
+      if (!success) continue;
+
+      this.updateDisplay();
+
+      // 移動を実行
+      const result = this.game.moveDisk(move.to);
+      
+      // ディスク移動時にエフェクトを表示
+      if (result.success) {
+        this.createImpactEffect(move.to);
+      }
+      
+      this.updateDisplay();
+
+      // 速度に応じた待機
+      const delay = (1000 / this.autoSpeed) * 1.5;
+      await new Promise(resolve => setTimeout(resolve, delay));
+
+      if (result.won) {
+        this.autoPlaying = false;
+        this.autoBtn.textContent = '🤖 オートモード';
+        this.autoBtn.classList.remove('playing');
+        this.showMessage(result.message, 'success');
+        this.playCelebrationEffect();
+        break;
+      }
+    }
+  }
+
   updateDisplay() {
+    console.log('updateDisplay called');
     // ディスク数の更新
     const minMoves = this.game.getMinMoves();
     this.minMovesDisplay.textContent = minMoves;
@@ -168,16 +267,21 @@ class GameUI {
 
     // 各杭のディスクを再描画
     for (let rodIndex = 0; rodIndex < 3; rodIndex++) {
+      console.log(`Rendering rod ${rodIndex}:`, this.game.rods[rodIndex]);
       this.renderRod(rodIndex);
     }
   }
 
   renderRod(rodIndex) {
     const rodElement = this.rods[rodIndex];
+    console.log(`renderRod ${rodIndex}, rodElement:`, rodElement);
     rodElement.innerHTML = '';
 
     const disks = this.game.rods[rodIndex];
+    console.log(`Disks for rod ${rodIndex}:`, disks);
+    
     disks.forEach((diskSize, index) => {
+      console.log(`Creating disk size ${diskSize} at index ${index}`);
       const diskElement = document.createElement('div');
       diskElement.className = `disk size-${diskSize}`;
       
@@ -188,23 +292,30 @@ class GameUI {
 
       diskElement.textContent = diskSize;
       diskElement.style.bottom = `${20 + index * 28}px`;
+      diskElement.style.left = '50%';
+      diskElement.style.transform = 'translateX(-50%)';
 
-      diskElement.addEventListener('click', () => {
+      diskElement.addEventListener('click', (e) => {
+        e.stopPropagation();
         this.handleDiskClick(rodIndex, diskSize);
       });
 
       rodElement.appendChild(diskElement);
+      console.log(`Disk appended to rod ${rodIndex}`);
     });
 
-    // 杭要素にクリックイベントを追加
-    rodElement.addEventListener('click', (event) => {
-      // ディスク要素をクリックした場合はここまで来ない
-      if (event.target.classList.contains('disk')) {
-        return;
-      }
-      // 杭をクリック（ディスクなし）
-      this.handleRodClick(rodIndex);
-    });
+    // 杭のクリックイベントリスナーが重複しないよう対策
+    if (!rodElement.dataset.hasClickListener) {
+      rodElement.addEventListener('click', (event) => {
+        // ディスク要素をクリックした場合はスキップ
+        if (event.target.classList.contains('disk')) {
+          return;
+        }
+        // 杭をクリック（ディスクなし）
+        this.handleRodClick(rodIndex);
+      });
+      rodElement.dataset.hasClickListener = 'true';
+    }
   }
 
   handleDiskClick(rodIndex, diskSize) {
@@ -229,6 +340,12 @@ class GameUI {
     } else {
       // 別のディスク/杭をクリック→移動
       const result = this.game.moveDisk(rodIndex);
+      
+      // ディスク移動時にエフェクトを表示
+      if (result.success) {
+        this.createImpactEffect(rodIndex);
+      }
+      
       this.updateDisplay();
 
       if (result.success) {
@@ -265,11 +382,20 @@ class GameUI {
 
     // ディスクを移動
     const result = this.game.moveDisk(rodIndex);
+    
+    // ディスク移動時にエフェクトを表示
+    if (result.success) {
+      this.createImpactEffect(rodIndex);
+    }
+    
     this.updateDisplay();
 
     if (result.success) {
       const messageType = result.won ? 'success' : 'info';
       this.showMessage(result.message, messageType);
+      if (result.won) {
+        this.playCelebrationEffect();
+      }
     } else {
       this.showMessage(result.message, 'error');
     }
@@ -287,6 +413,78 @@ class GameUI {
         }
       }, 3000);
     }
+  }
+
+  createImpactEffect(rodIndex) {
+    console.log('createImpactEffect called for rodIndex:', rodIndex);
+    const rodElement = this.rods[rodIndex];
+    const rect = rodElement.getBoundingClientRect();
+    const gameBoard = document.querySelector('.game-board');
+    const gameBoardRect = gameBoard.getBoundingClientRect();
+
+    // 相対位置を計算
+    const x = rect.left - gameBoardRect.left + rect.width / 2;
+    const y = rect.top - gameBoardRect.top + rect.height;
+
+    console.log('Effect position - x:', x, 'y:', y);
+
+    // インパクトテキスト配列
+    const texts = ['BAM!', 'POW!', 'BOOM!', 'BANG!', 'ZAP!'];
+    const randomText = texts[Math.floor(Math.random() * texts.length)];
+
+    // テキストエフェクト
+    const textEffect = document.createElement('div');
+    textEffect.className = 'impact-text impact-text-bang';
+    textEffect.textContent = randomText;
+    textEffect.style.left = x + 'px';
+    textEffect.style.top = y - 40 + 'px';
+    textEffect.style.position = 'absolute';
+    gameBoard.appendChild(textEffect);
+    console.log('Text effect added:', randomText);
+
+    // 星エフェクト（複数）
+    for (let i = 0; i < 5; i++) {
+      const star = document.createElement('div');
+      star.className = 'impact-effect';
+      
+      const starIcon = document.createElement('div');
+      starIcon.className = 'impact-star';
+      starIcon.style.left = (x - 30 + Math.random() * 60) + 'px';
+      starIcon.style.top = (y - 30 - Math.random() * 60) + 'px';
+      
+      star.appendChild(starIcon);
+      gameBoard.appendChild(star);
+    }
+
+    // 爆発円形エフェクト
+    const burst = document.createElement('div');
+    burst.style.position = 'absolute';
+    burst.style.left = x + 'px';
+    burst.style.top = y + 'px';
+    burst.style.width = '40px';
+    burst.style.height = '40px';
+    burst.style.border = '3px solid #ff922b';
+    burst.style.borderRadius = '50%';
+    burst.style.pointerEvents = 'none';
+    burst.style.zIndex = '55';
+    burst.style.animation = 'impactExpand 0.6s ease-out forwards';
+    gameBoard.appendChild(burst);
+
+    // テキストエフェクトを自動削除
+    setTimeout(() => {
+      textEffect.remove();
+    }, 700);
+
+    // 星エフェクトを自動削除
+    setTimeout(() => {
+      const stars = gameBoard.querySelectorAll('.impact-effect');
+      stars.forEach(s => s.remove());
+    }, 600);
+
+    // バースト円を自動削除
+    setTimeout(() => {
+      burst.remove();
+    }, 600);
   }
 
   playCelebrationEffect() {

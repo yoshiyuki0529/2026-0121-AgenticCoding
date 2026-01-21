@@ -28,6 +28,7 @@
               <option value="7">超むずかしい (7個)</option>
             </select>
             <button id="start-btn" class="btn btn-primary">ゲーム開始</button>
+            <button id="auto-btn" class="btn btn-auto" disabled>🤖 オートモード</button>
           </div>
 
           <div class="stats-section">
@@ -40,6 +41,11 @@
               <span class="stat-value" id="min-moves">0</span>
             </div>
             <button id="reset-btn" class="btn btn-secondary">リセット</button>
+            <div class="speed-control">
+              <label for="speed-slider">プレイ速度:</label>
+              <input type="range" id="speed-slider" min="0.5" max="3" step="0.5" value="1" disabled>
+              <span id="speed-label">標準</span>
+            </div>
           </div>
         </div>
 
