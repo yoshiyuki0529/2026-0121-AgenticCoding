@@ -118,8 +118,12 @@ class GameUI {
     this.game = null;
     this.autoPlaying = false;
     this.autoSpeed = 1;
+    this.currentMode = 'normal';
+    this.timerInterval = null;
+    this.startTime = null;
     this.setupElements();
     this.attachEventListeners();
+    this.loadRankings();
   }
 
   setupElements() {
@@ -132,7 +136,17 @@ class GameUI {
     this.moveCountDisplay = document.getElementById('move-count');
     this.minMovesDisplay = document.getElementById('min-moves');
     this.messageArea = document.getElementById('message');
+    this.timerDisplay = document.getElementById('timer');
     this.rods = [];
+    
+    // モード関連
+    this.modeButtons = document.querySelectorAll('.mode-btn');
+    this.storyScreen = document.getElementById('story-screen');
+    this.storyGameScreen = document.getElementById('story-game-screen');
+    this.storyBackBtn = document.getElementById('story-back-btn');
+    this.stageStartBtns = document.querySelectorAll('.stage-start-btn');
+    this.rankingModal = document.getElementById('ranking-modal');
+    this.rankingCloseBtn = document.getElementById('ranking-close-btn');
     
     for (let i = 0; i < 3; i++) {
       this.rods.push(document.getElementById(`rod-${i}`));
@@ -149,6 +163,23 @@ class GameUI {
         this.resetGame();
       }
     });
+
+    // モード切り替え
+    this.modeButtons.forEach(btn => {
+      btn.addEventListener('click', () => this.switchMode(btn.dataset.mode));
+    });
+
+    // ストーリーモード
+    this.storyBackBtn.addEventListener('click', () => this.backToModeSelection());
+    this.stageStartBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const diskCount = parseInt(btn.dataset.disk);
+        this.startStoryGame(diskCount);
+      });
+    });
+
+    // ランキング
+    this.rankingCloseBtn.addEventListener('click', () => this.closeRanking());
   }
 
   startGame() {
@@ -159,9 +190,168 @@ class GameUI {
     this.startBtn.textContent = '再スタート';
     this.autoBtn.disabled = false;
     this.speedSlider.disabled = false;
+    
+    // タイムアタックモードの場合、タイマーを開始
+    if (this.currentMode === 'timeatack') {
+      this.startTimer();
+    }
+    
     this.updateDisplay();
     console.log('Display updated');
     this.showMessage(`難易度: ${diskCount}個のディスク`, 'info');
+  }
+
+  switchMode(mode) {
+    this.currentMode = mode;
+    console.log('Switched to mode:', mode);
+
+    // ボタンの表示状態を更新
+    this.modeButtons.forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.dataset.mode === mode) {
+        btn.classList.add('active');
+      }
+    });
+
+    // ゲーム画面をリセット
+    this.resetGame();
+    this.stopTimer();
+    this.closeRanking();
+
+    if (mode === 'normal') {
+      // フリーモード
+      this.storyScreen.classList.add('hidden');
+      this.storyGameScreen.classList.add('hidden');
+    } else if (mode === 'story') {
+      // ストーリーモード
+      this.storyScreen.classList.remove('hidden');
+      this.storyGameScreen.classList.add('hidden');
+    } else if (mode === 'timeatack') {
+      // タイムアタック
+      this.storyScreen.classList.add('hidden');
+      this.storyGameScreen.classList.add('hidden');
+    }
+  }
+
+  startStoryGame(diskCount) {
+    this.difficultySelect.value = diskCount;
+    this.storyScreen.classList.add('hidden');
+    this.storyGameScreen.classList.remove('hidden');
+    
+    // ストーリータイトルと説明を更新
+    const storyData = {
+      3: { title: '第1章: 修行', desc: '小さな3つのリングで基本を学びます' },
+      5: { title: '第2章: 挑戦', desc: '5つのリングで本当の力を試します' },
+      7: { title: '第3章: 最終試練', desc: '7つのリングの究極の挑戦です！' }
+    };
+    
+    const story = storyData[diskCount];
+    document.getElementById('current-stage-title').textContent = story.title;
+    document.getElementById('current-stage-desc').textContent = story.desc;
+    
+    this.startGame();
+  }
+
+  backToModeSelection() {
+    this.resetGame();
+    this.storyScreen.classList.remove('hidden');
+    this.storyGameScreen.classList.add('hidden');
+    // タイトルをリセット
+    document.getElementById('current-stage-title').textContent = '第1章: 修行';
+    document.getElementById('current-stage-desc').textContent = '小さな3つのリングで基本を学びます';
+  }
+
+  startTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+    }
+    this.startTime = Date.now();
+    this.timerInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = elapsed % 60;
+      this.timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }, 100);
+  }
+
+  stopTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+  }
+
+  loadRankings() {
+    const saved = localStorage.getItem('hanoi-rankings');
+    this.rankings = saved ? JSON.parse(saved) : {};
+  }
+
+  saveRanking(diskCount, time) {
+    if (!this.rankings[diskCount]) {
+      this.rankings[diskCount] = [];
+    }
+    this.rankings[diskCount].push({
+      time,
+      date: new Date().toLocaleString('ja-JP')
+    });
+    // ソート（昇順）
+    this.rankings[diskCount].sort((a, b) => a.time - b.time);
+    // 最新10件のみ保持
+    this.rankings[diskCount] = this.rankings[diskCount].slice(0, 10);
+    localStorage.setItem('hanoi-rankings', JSON.stringify(this.rankings));
+  }
+
+  showRanking(diskCount, currentTime) {
+    const rankings = this.rankings[diskCount] || [];
+    const currentMinutes = Math.floor(currentTime / 60);
+    const currentSeconds = currentTime % 60;
+    const currentTimeStr = `${String(currentMinutes).padStart(2, '0')}:${String(currentSeconds).padStart(2, '0')}`;
+
+    document.getElementById('current-time').textContent = currentTimeStr;
+    
+    if (rankings.length > 0) {
+      const bestTime = rankings[0].time;
+      const bestMinutes = Math.floor(bestTime / 60);
+      const bestSeconds = bestTime % 60;
+      document.getElementById('best-time').textContent = `${String(bestMinutes).padStart(2, '0')}:${String(bestSeconds).padStart(2, '0')}`;
+    } else {
+      document.getElementById('best-time').textContent = '--:--';
+    }
+
+    const rankingList = document.getElementById('ranking-list');
+    rankingList.innerHTML = '';
+    rankings.forEach((ranking, index) => {
+      const minutes = Math.floor(ranking.time / 60);
+      const seconds = ranking.time % 60;
+      const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      const entry = document.createElement('div');
+      entry.className = 'ranking-entry';
+      entry.innerHTML = `
+        <span>${index + 1}位</span>
+        <span class="ranking-entry-time">${timeStr}</span>
+        <span class="ranking-entry-date">${ranking.date}</span>
+      `;
+      rankingList.appendChild(entry);
+    });
+
+    this.rankingModal.classList.remove('hidden');
+  }
+
+  closeRanking() {
+    this.rankingModal.classList.add('hidden');
+  }
+
+  onGameClear() {
+    // ゲークリア時の共通処理
+    if (this.currentMode === 'timeatack') {
+      this.stopTimer();
+      const currentTime = Math.floor((Date.now() - this.startTime) / 1000);
+      const diskCount = this.game.diskCount;
+      this.saveRanking(diskCount, currentTime);
+      setTimeout(() => {
+        this.showRanking(diskCount, currentTime);
+      }, 1000);
+    }
   }
 
   resetGame() {
@@ -253,6 +443,10 @@ class GameUI {
         this.autoBtn.classList.remove('playing');
         this.showMessage(result.message, 'success');
         this.playCelebrationEffect();
+        // タイムアタック完了時の処理
+        if (this.currentMode === 'timeatack') {
+          this.onGameClear();
+        }
         break;
       }
     }
@@ -353,6 +547,10 @@ class GameUI {
         this.showMessage(result.message, messageType);
         if (result.won) {
           this.playCelebrationEffect();
+          // タイムアタック完了時の処理
+          if (this.currentMode === 'timeatack') {
+            this.onGameClear();
+          }
         }
       } else {
         this.showMessage(result.message, 'error');

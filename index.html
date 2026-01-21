@@ -16,6 +16,56 @@
           <p class="subtitle">すべてのリングを右の杭に移そう！</p>
         </header>
 
+        <!-- モード選択 -->
+        <div class="mode-selection">
+          <button class="mode-btn active" id="mode-normal" data-mode="normal">
+            <span class="mode-icon">🎮</span>
+            <span class="mode-text">フリーモード</span>
+          </button>
+          <button class="mode-btn" id="mode-story" data-mode="story">
+            <span class="mode-icon">📖</span>
+            <span class="mode-text">ストーリーモード</span>
+          </button>
+          <button class="mode-btn" id="mode-timeatack" data-mode="timeatack">
+            <span class="mode-icon">⏱️</span>
+            <span class="mode-text">タイムアタック</span>
+          </button>
+        </div>
+
+        <!-- ストーリーモード画面 -->
+        <div id="story-screen" class="story-screen hidden">
+          <div class="story-content">
+            <h2 id="story-title">魔法の塔の冒険</h2>
+            <p id="story-description">魔法使いのあなたは、魔法の塔のリングを全て移さなければなりません</p>
+            <div class="story-stages">
+              <div class="story-stage" data-stage="1">
+                <h3>第1章: 修行</h3>
+                <p>小さな3つのリングで基本を学びます</p>
+                <button class="btn btn-primary stage-start-btn" data-disk="3">開始</button>
+              </div>
+              <div class="story-stage" data-stage="2">
+                <h3>第2章: 挑戦</h3>
+                <p>5つのリングで本当の力を試します</p>
+                <button class="btn btn-primary stage-start-btn" data-disk="5">開始</button>
+              </div>
+              <div class="story-stage" data-stage="3">
+                <h3>第3章: 最終試練</h3>
+                <p>7つのリングの究極の挑戦です！</p>
+                <button class="btn btn-primary stage-start-btn" data-disk="7">開始</button>
+              </div>
+            </div>
+            <button class="btn btn-secondary" id="story-back-btn">戻る</button>
+          </div>
+        </div>
+
+        <!-- ストーリー進行中画面 -->
+        <div id="story-game-screen" class="story-game-screen hidden">
+          <div class="story-header">
+            <h2 id="current-stage-title">第1章: 修行</h2>
+            <p id="current-stage-desc">小さな3つのリングで基本を学びます</p>
+          </div>
+        </div>
+
         <!-- コントロールパネル -->
         <div class="control-panel">
           <div class="difficulty-section">
@@ -32,6 +82,10 @@
           </div>
 
           <div class="stats-section">
+            <div class="stat">
+              <span class="stat-label">時間:</span>
+              <span class="stat-value" id="timer">00:00</span>
+            </div>
             <div class="stat">
               <span class="stat-label">手数:</span>
               <span class="stat-value" id="move-count">0</span>
@@ -82,6 +136,28 @@
         <!-- メッセージ表示エリア -->
         <div class="message-area">
           <div id="message" class="message"></div>
+        </div>
+
+        <!-- タイムアタック結果・ランキング表示 -->
+        <div id="ranking-modal" class="ranking-modal hidden">
+          <div class="ranking-content">
+            <h2>🏆 ランキング</h2>
+            <div class="ranking-stats">
+              <div class="ranking-item">
+                <span class="ranking-label">今回のタイム:</span>
+                <span class="ranking-value" id="current-time">00:00</span>
+              </div>
+              <div class="ranking-item">
+                <span class="ranking-label">ベストタイム:</span>
+                <span class="ranking-value" id="best-time">--:--</span>
+              </div>
+            </div>
+            <div class="ranking-history">
+              <h3>📝 過去の記録</h3>
+              <div id="ranking-list" class="ranking-list"></div>
+            </div>
+            <button class="btn btn-primary" id="ranking-close-btn">戻る</button>
+          </div>
         </div>
 
         <!-- ゲーム説明 -->
