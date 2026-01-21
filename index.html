@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ハノイの塔 - 楽しいパズルゲーム</title>
+    <link rel="stylesheet" href="/src/styles/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- ゲーム全体のコンテナ -->
+      <div class="game-container">
+        <!-- ヘッダー -->
+        <header class="header">
+          <h1>🗼 ハノイの塔へようこそ！</h1>
+          <p class="subtitle">すべてのリングを右の杭に移そう！</p>
+        </header>
+
+        <!-- コントロールパネル -->
+        <div class="control-panel">
+          <div class="difficulty-section">
+            <label for="difficulty">難易度を選ぶ:</label>
+            <select id="difficulty">
+              <option value="3">かんたん (3個)</option>
+              <option value="4">ふつう (4個)</option>
+              <option value="5" selected>むずかしい (5個)</option>
+              <option value="6">もっと むずかしい (6個)</option>
+              <option value="7">超むずかしい (7個)</option>
+            </select>
+            <button id="start-btn" class="btn btn-primary">ゲーム開始</button>
+          </div>
+
+          <div class="stats-section">
+            <div class="stat">
+              <span class="stat-label">手数:</span>
+              <span class="stat-value" id="move-count">0</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">最小手数:</span>
+              <span class="stat-value" id="min-moves">0</span>
+            </div>
+            <button id="reset-btn" class="btn btn-secondary">リセット</button>
+          </div>
+        </div>
+
+        <!-- ゲームボード -->
+        <div class="game-board">
+          <!-- 左の杭 -->
+          <div class="rod-section">
+            <div class="rod-container">
+              <div class="rod" id="rod-0"></div>
+              <div class="base"></div>
+            </div>
+            <p class="rod-label">左</p>
+          </div>
+
+          <!-- 中央の杭 -->
+          <div class="rod-section">
+            <div class="rod-container">
+              <div class="rod" id="rod-1"></div>
+              <div class="base"></div>
+            </div>
+            <p class="rod-label">中央</p>
+          </div>
+
+          <!-- 右の杭 -->
+          <div class="rod-section">
+            <div class="rod-container">
+              <div class="rod" id="rod-2"></div>
+              <div class="base"></div>
+            </div>
+            <p class="rod-label">右</p>
+          </div>
+        </div>
+
+        <!-- メッセージ表示エリア -->
+        <div class="message-area">
+          <div id="message" class="message"></div>
+        </div>
+
+        <!-- ゲーム説明 -->
+        <div class="rules-section">
+          <h2>📚 ルール</h2>
+          <ul>
+            <li>大きいリングの上に小さいリングを置くことはできません</li>
+            <li>1度に1個のリングだけ動かせます</li>
+            <li>すべてのリングを右の杭に移したらクリア！</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
